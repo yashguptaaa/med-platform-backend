@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          UserRole  @default(USER)
+  image         String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+  appointments  Appointment[]
+  doctor        Doctor?
+  reviews       Review[]
+}
+
+model Hospital {
+  id              String    @id @default(uuid())
+  name            String
+  city            String
+  address         String
+  rating          Float     @default(0)
+  latitude        Float?
+  longitude       Float?
+  google_map_link String?
+  images          String[]
+
+  // Relations
+  doctors         DoctorHospital[]
+  specializations HospitalSpecialization[]
+
+  // Legacy/Simple fields
+  specializations_list String[] @map("specializations")
+
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+  appointments    Appointment[]
+}
+
+model Doctor {
+  id                  String    @id @default(uuid())
+  name                String
+  image               String?
+
+  // Relations
+  hospitals           DoctorHospital[]
+  specializations     DoctorSpecialization[]
+
+  years_of_experience Int
+  rating              Float     @default(0)
+  review_count        Int       @default(0)
+  city                String
+
+  // Legacy fields
+  specialization      String?
+  hospital_id         String?
+
+  user_id             String?   @unique
+  user                User?     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Dashboard Relations
+  appointments        Appointment[]
+  availability        Availability[]
+  change_requests     DoctorChangeRequest[]
+  reviews             Review[]
+
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  deleted_at          DateTime?
+}
+
+model Specialization {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+
+  doctors     DoctorSpecialization[]
+  hospitals   HospitalSpecialization[]
+
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+}
+
+// Join tables for many-to-many relationships
+model DoctorHospital {
+  doctor      Doctor   @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  doctor_id   String
+  hospital    Hospital @relation(fields: [hospital_id], references: [id], onDelete: Cascade)
+  hospital_id String
+
+  @@id([doctor_id, hospital_id])
+}
+
+model DoctorSpecialization {
+  doctor            Doctor         @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  doctor_id         String
+  specialization    Specialization @relation(fields: [specialization_id], references: [id], onDelete: Cascade)
+  specialization_id String
+
+  @@id([doctor_id, specialization_id])
+}
+
+model HospitalSpecialization {
+  hospital          Hospital       @relation(fields: [hospital_id], references: [id], onDelete: Cascade)
+  hospital_id       String
+  specialization    Specialization @relation(fields: [specialization_id], references: [id], onDelete: Cascade)
+  specialization_id String
+
+  @@id([hospital_id, specialization_id])
+}
+
+model Job {
+  id          String    @id @default(uuid())
+  title       String
+  location    String
+  description String
+  department  String
+  is_active   Boolean   @default(true)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+}
+
+model ContactMessage {
+  id         String    @id @default(uuid())
+  name       String
+  email      String
+  message    String
+  created_at DateTime  @default(now())
+  deleted_at DateTime?
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  patient_id  String
+  patient     User              @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  doctor_id   String
+  doctor      Doctor            @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  hospital_id String
+  hospital    Hospital          @relation(fields: [hospital_id], references: [id], onDelete: Cascade)
+  date        DateTime
+  status      AppointmentStatus @default(PENDING)
+  reason      String?
+  review      Review?
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  deleted_at  DateTime?
+}
+
+model Availability {
+  id          String    @id @default(uuid())
+  doctor_id   String
+  doctor      Doctor    @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  day_of_week Int       // 0-6 (Sun-Sat)
+  start_time  String    // HH:mm
+  end_time    String    // HH:mm
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+}
+
+model DoctorChangeRequest {
+  id                String              @id @default(uuid())
+  doctor_id         String
+  doctor            Doctor              @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  status            ChangeRequestStatus @default(PENDING)
+  requested_changes Json
+  admin_feedback    String?
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  deleted_at        DateTime?
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  DOCTOR
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  id             String      @id @default(uuid())
+  doctor_id      String
+  doctor         Doctor      @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  patient_id     String
+  patient        User        @relation(fields: [patient_id], references: [id], onDelete: Cascade)
+  appointment_id String      @unique
+  appointment    Appointment @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  rating         Int
+  comment        String?
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  deleted_at     DateTime?
+}
