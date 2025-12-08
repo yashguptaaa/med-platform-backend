@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: doctor-redis
+    restart: always
+
+  app:
+    build: .
+    container_name: doctor-api
+    env_file:
+      - .env      # prod env on EC2
+    depends_on:
+      - redis
+    ports:
+      - "4000:4000"
+    restart: always
+    command: >
+      sh -c "npm run prisma:migrate:deploy &&
+             node dist/index.js"

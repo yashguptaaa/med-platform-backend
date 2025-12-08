@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: doctor-db
+    environment:
+      POSTGRES_USER: pgsql
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: med_platform
+    ports:
+      - "5431:5432"   # host:container (you changed this)
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: doctor-redis
+    ports:
+      - "6380:6379"
+    restart: always
+
+  app:
+    build: .
+    container_name: doctor-api
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "4000:4000"
+    restart: always
+    command: >
+      sh -c "npm run prisma:migrate:deploy &&
+             node dist/index.js"
+
+volumes:
+  db_data:
