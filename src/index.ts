@@ -61,7 +61,7 @@ app.use("/api/reviews", reviewRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const server = app.listen(appConfig.port, () => {
+const server = app.listen(appConfig.port, "0.0.0.0", () => {
   logger.info(`API server listening on port ${appConfig.port}`);
 });
 
