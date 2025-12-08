@@ -13,6 +13,7 @@
   "prisma:generate": "prisma generate",
   "prisma:reset": "prisma migrate reset --force",
   "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+  "seed:prod": "node dist/scripts/seed.js",
   "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0" 
   },
   "keywords": [],
