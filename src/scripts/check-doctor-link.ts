@@ -8,7 +8,7 @@ async function main() {
   
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    console.log("❌ User 'doctor@example.com' NOT FOUND.");
+    console.log("❌ User NOT FOUND.");
     return;
   }
   console.log(`✅ User found: ${user.id} (${user.role})`);
