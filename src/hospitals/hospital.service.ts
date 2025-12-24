@@ -2,7 +2,7 @@ import { prisma } from "@/config/database";
 import { AppError } from "@/utils/appError";
 import { StatusCodes } from "http-status-codes";
 import { toCamelCase } from "@/utils/transform";
-import type { CreateHospitalDto, HospitalQueryDto, UpdateHospitalDto } from "./hospital.validator";
+import type { CreateHospitalDto, HospitalQueryDto, UpdateHospitalDto, NearbyHospitalQueryDto } from "./hospital.validator";
 import { deleteFile } from "@/utils/upload";
 
 const listHospitals = async (query: HospitalQueryDto) => {
@@ -162,10 +162,133 @@ const deleteHospital = async (id: string) => {
   });
 };
 
+const getNearbyHospitals = async (query: NearbyHospitalQueryDto) => {
+  const { lat, lng, radius = 5, page = 1, limit = 10 } = query;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new Error("Invalid latitude or longitude");
+  }
+
+  const skip = (page - 1) * limit;
+
+  const rawHospitals = await prisma.$queryRaw<
+    Array<{ id: string; distance: number }>
+  >`
+    SELECT 
+      id,
+      (
+        6371 * acos(
+          LEAST(
+            1,
+            GREATEST(
+              -1,
+              cos(radians(${lat})) * cos(radians(latitude)) *
+              cos(radians(longitude) - radians(${lng})) +
+              sin(radians(${lat})) * sin(radians(latitude))
+            )
+          )
+        )
+      ) AS distance
+    FROM "Hospital"
+    WHERE deleted_at IS NULL
+      AND latitude IS NOT NULL
+      AND longitude IS NOT NULL
+      AND (
+        6371 * acos(
+          LEAST(
+            1,
+            GREATEST(
+              -1,
+              cos(radians(${lat})) * cos(radians(latitude)) *
+              cos(radians(longitude) - radians(${lng})) +
+              sin(radians(${lat})) * sin(radians(latitude))
+            )
+          )
+        )
+      ) <= ${radius}
+    ORDER BY distance ASC
+    LIMIT ${limit}
+    OFFSET ${skip}
+  `;
+
+  const totalRaw = await prisma.$queryRaw<Array<{ count: number }>>`
+    SELECT COUNT(*)::int AS count
+    FROM "Hospital"
+    WHERE deleted_at IS NULL
+      AND latitude IS NOT NULL
+      AND longitude IS NOT NULL
+      AND (
+        6371 * acos(
+          LEAST(
+            1,
+            GREATEST(
+              -1,
+              cos(radians(${lat})) * cos(radians(latitude)) *
+              cos(radians(longitude) - radians(${lng})) +
+              sin(radians(${lat})) * sin(radians(latitude))
+            )
+          )
+        )
+      ) <= ${radius}
+  `;
+
+  const total = totalRaw[0]?.count ?? 0;
+
+  if (rawHospitals.length === 0) {
+    return {
+      data: [],
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // 3. Fetch full hospital details
+  const hospitalIds = rawHospitals.map((h) => h.id);
+
+  const hospitals = await prisma.hospital.findMany({
+    where: { id: { in: hospitalIds } },
+    include: {
+      specializations: {
+        include: { specialization: true },
+      },
+    },
+  });
+
+  // 4. Merge distance and restore correct order
+  const distanceMap = new Map(
+    rawHospitals.map((h) => [h.id, h.distance])
+  );
+
+  const mappedHospitals = hospitals
+    .map((hospital) => ({
+      ...hospital,
+      distance: distanceMap.get(hospital.id) ?? 0,
+      specializations: hospital.specializations.map(
+        (s) => s.specialization
+      ),
+    }))
+    .sort((a, b) => a.distance - b.distance);
+
+  return {
+    data: toCamelCase(mappedHospitals),
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 export {
   listHospitals,
   getHospital,
   createHospital,
   updateHospital,
   deleteHospital,
+  getNearbyHospitals,
 };

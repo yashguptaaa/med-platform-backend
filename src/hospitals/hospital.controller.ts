@@ -1,10 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import * as hospitalService from "./hospital.service";
+import { nearbyHospitalQuerySchema, hospitalQuerySchema } from "./hospital.validator";
 
 const listHospitals = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await hospitalService.listHospitals(req.query as any);
+    const query = hospitalQuerySchema.parse(req.query);
+    const result = await hospitalService.listHospitals(query);
     res.sendSuccess(result.data, StatusCodes.OK, result.meta);
   } catch (error) {
     console.error("Error in listHospitals:", error);
@@ -58,10 +60,21 @@ const deleteHospital = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const getNearbyHospitals = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const query = nearbyHospitalQuerySchema.parse(req.query);
+    const result = await hospitalService.getNearbyHospitals(query);
+    res.sendSuccess(result.data, StatusCodes.OK, result.meta);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   listHospitals,
   getHospital,
   createHospital,
   updateHospital,
   deleteHospital,
+  getNearbyHospitals,
 };

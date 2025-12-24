@@ -69,6 +69,8 @@ async function main() {
         city: "San Francisco, CA",
         address: "455 Mission Street, San Francisco, CA",
         rating: 4.8,
+        latitude: 37.7749,
+        longitude: -122.4194,
         specializations: ["Cardiology", "Emergency Care", "Orthopedics"],
       },
       {
@@ -76,6 +78,8 @@ async function main() {
         city: "Seattle, WA",
         address: "801 Water Ave, Seattle, WA",
         rating: 4.7,
+        latitude: 47.6062,
+        longitude: -122.3321,
         specializations: ["Neurology", "Dermatology", "General Medicine"],
       },
       {
@@ -83,6 +87,8 @@ async function main() {
         city: "Austin, TX",
         address: "32 Barton Springs Rd, Austin, TX",
         rating: 4.6,
+        latitude: 30.2672,
+        longitude: -97.7431,
         specializations: ["Pediatrics", "General Medicine", "ENT"],
       },
     ].map((hospital) => 
@@ -92,6 +98,8 @@ async function main() {
           city: hospital.city,
           address: hospital.address,
           rating: hospital.rating,
+          latitude: hospital.latitude,
+          longitude: hospital.longitude,
           specializations_list: hospital.specializations, // Legacy
           specializations: {
             create: hospital.specializations.map(name => ({ 
