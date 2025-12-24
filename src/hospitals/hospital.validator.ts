@@ -40,3 +40,17 @@ export const updateHospitalSchema = z.object({
 export type HospitalQueryDto = z.infer<typeof hospitalQuerySchema>;
 export type CreateHospitalDto = z.infer<typeof createHospitalSchema>;
 export type UpdateHospitalDto = z.infer<typeof updateHospitalSchema>;
+
+export const nearbyHospitalQuerySchema = z.object({
+  lat: z.string().transform((val) => parseFloat(val)).refine((val) => val >= -90 && val <= 90, {
+    message: "Latitude must be between -90 and 90",
+  }),
+  lng: z.string().transform((val) => parseFloat(val)).refine((val) => val >= -180 && val <= 180, {
+    message: "Longitude must be between -180 and 180",
+  }),
+  radius: z.string().optional().transform(val => val ? parseFloat(val) : 5),
+  page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
+  limit: z.string().optional().transform(val => val ? parseInt(val, 10) : 10),
+});
+
+export type NearbyHospitalQueryDto = z.infer<typeof nearbyHospitalQuerySchema>;

@@ -13,6 +13,8 @@
   "prisma:generate": "prisma generate",
   "prisma:reset": "prisma migrate reset --force",
   "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+  "verify-nearby": "ts-node -r tsconfig-paths/register src/scripts/verify-nearby.ts",
+  "debug-db": "ts-node -r tsconfig-paths/register src/scripts/debug-db.ts",
   "seed:prod": "node dist/scripts/seed.js",
   "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0" 
   },

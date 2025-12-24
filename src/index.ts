@@ -69,4 +69,3 @@ process.on("unhandledRejection", (reason) => {
   logger.error({ reason }, "Unhandled promise rejection");
   server.close(() => process.exit(1));
 });
-
