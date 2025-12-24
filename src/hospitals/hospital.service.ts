@@ -245,8 +245,7 @@ const getNearbyHospitals = async (query: NearbyHospitalQueryDto) => {
       },
     };
   }
-
-  // 3. Fetch full hospital details
+  
   const hospitalIds = rawHospitals.map((h) => h.id);
 
   const hospitals = await prisma.hospital.findMany({
@@ -258,7 +257,6 @@ const getNearbyHospitals = async (query: NearbyHospitalQueryDto) => {
     },
   });
 
-  // 4. Merge distance and restore correct order
   const distanceMap = new Map(
     rawHospitals.map((h) => [h.id, h.distance])
   );
